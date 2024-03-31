@@ -1,5 +1,5 @@
 # RapidSFM
-A CUDA-accelerated high-performanmce implementation for the structure from motion (SFM) algorithm. Compare to most alternatives, RapidSFM performance is about two orders of magnitude faster.
+A CUDA-accelerated high-performance implementation for the structure from motion (SFM) algorithm. Compare to most alternatives, RapidSFM performance is about two orders of magnitude faster.
 
 ## Example usage
  1. Download drone images from https://s3.amazonaws.com/DroneMapper_US/example/DroneMapper_Golf9_May2016.zip (Thank DroneMapper for sharing sample images)
