@@ -1,0 +1,15 @@
+[submodule "extern/RapidBA"]
+	path = extern/RapidBA
+	url = git@github.com:lowsfer/RapidBA.git
+[submodule "extern/RapidBoW"]
+	path = extern/RapidBoW
+	url = git@github.com:lowsfer/RapidBoW.git
+[submodule "extern/RapidSIFT"]
+	path = extern/RapidSIFT
+	url = git@github.com:lowsfer/RapidSIFT.git
+[submodule "extern/cuda-utils"]
+	path = extern/cuda-utils
+	url = git@github.com:lowsfer/cuda-utils.git
+[submodule "extern/lambdatwist"]
+	path = extern/lambdatwist
+	url = https://github.com/vlarsson/lambdatwist.git

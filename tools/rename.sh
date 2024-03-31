@@ -1,0 +1,1 @@
+j=0; for i in DJI*.JPG; do mv $i "$( printf '%03d' "$j" )".jpg; j=`echo $j+1 | bc`; done

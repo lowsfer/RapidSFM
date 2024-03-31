@@ -1,0 +1,140 @@
+# Copyright [2024] [Yao Yao]
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+config:
+  cacheFolder: ./rsfm_cache
+  opticModel: kF1D5
+  shutterType: kGlobal
+  rollingShutterOnlyInFinalBA: true
+  memPool:
+    deviceBytes: 4294967296         # 4GB
+    pinnedBytes: 8589934592         # 8GB
+    sysBytes:    17179869184        # 16GB
+  objCache:
+    deviceBytes: 3221225472         # 3GB
+    pinnedBytes: 6442450944         # 6GB
+    sysBytes:    12884901888        # 12GB
+  vocabulary:
+    path: ~/rapidsfm/${sift.descType}.vocabulary
+    rebuild: false # Rebuild if rebuild==true, or path is an invalid vocabulary.
+    saveAfterRebuild: true
+    maxRebuildImages: 1000
+    maxRebuildKPoints: 8388608 # 1GB memory for 128-byte descriptors
+  nbRandStreams: 16
+  sift:
+    nbWorkers: 1
+    targetNbKPoints: 5000
+    initContrastThreshold: 0.04
+    minContrastThreshold: 0.002
+    minOverDetectRatio: 4
+    upSample: false # Prefer false if it can provide enough key points. Up-sample reduces repeatibility.
+    uniform: true # false is not allowed for now
+    descType: kRootSIFT
+  bow:
+    nbAbstractSamples: 10000
+  matcher:
+    nbWorkers: 1
+    useSift4b: false
+  matchFilter:
+    useGPU: true
+    # Only the GPU filter respects the settings below
+    nbRansacTests: 256
+    cellCols: 16
+    nbWorkers: 4
+    relativeThreshold: 0.15 # relative to cell width
+    minVotes: 2
+    tryOtherAffines: true # Whether we should try affine transformation solutions of all other cells
+  pair:
+    maxNbCandidates: 40
+    nbNeighbours: 4
+    # below is for secondary candidates. Currently not used
+    # expectedNbPairing: expectedNbPairing * attenuation + newNbPairing * (1-attenuation)
+    attenuation: 0.8
+    overPairingFactor: 1.2 # try to solve std::max(expectedNbPairing+minNbOverPairing, expectedNbPairing * overPairing) pairs
+    minNbOverPairing: 2
+    crossCheck: true
+    pmfMinVotes: 2
+  pairSolver:
+    useDegensac: true
+    requiredRansacConfidence: 0.995
+    preferAccuracy: true #false is perfer performance.
+    epipolarityRansacRelativeThreshold: 0.008
+    homographyRansacRelativeThreshold: 0.005
+    tiePtWeight: 1.0
+    disambiguityFrontRatio: 0.95
+    disambiguityNbInliersRatio: 0.625      #for H or F decomposition
+    duplicateRotationThreshold: 0.0873     # 5.f / 180.f * M_PI
+    minNbInliers: 50
+    minSpan: 0.0438                        # 0.292f * 0.15f
+    refineRelativeHuberDelta: 0.005 #error in two dimensions
+    recheckRelativeThreshold: 0.01  #error in two dimensions
+    nbRefineIterations: 10  #2 may be insufficient for convergence.
+    refineConvergThresAngle:  0.0349       # 2.f / 180.f * M_PI
+    zMin: 0.02 #relative to translation length
+    zMax: 128
+    minAngle: 0.0017453292519943296                  # 0.1f / 180 * M_PI, in rad
+    maxAngle: 1.57                     # 90.f / 180 * M_PI, in rad
+    # fundamental matrix RT has low accurancy when overlap is < 40% and it cannot be recovered by RT optimization. No idea why.
+    skipHomographyIfFundamentalMatrixIsGood: false
+    solutionDisambiguityScoreRatio: 0.8 # for final solutions
+  pnpSolver:
+    requiredRansacConfidence: 0.999
+    ransacRelativeThreshold: 0.01
+    ransacSampleMinSpan: 0.0438         # 0.292f * 0.15f
+    maxNbRansacTests: 5000
+    minSpan: 0.0438                     # 0.292f * 0.15f
+    tiePtWeight: 1.0
+    minNbInliers: 50
+    minInlierRatio: 0.33
+    optimizeWithBA: true
+  blockingService:
+    interval: 100  #in ms
+    windowSize: 1024
+    maxPendingTasks: 1048576
+  fiberPool:
+    # nbThreads: 12 # default is std::thread::hardware_concurrency()
+    stackSize: 262144 # In Bytes. Seems 16KB is not enough and 28KB is usually OK. A 4KB guard page will be appended.
+  model:
+    minPairInliersForInit: 300
+    maxMedianDepthForInit: 32
+    minMedianAngleForInit: 0.008726646259971648
+    minNbCommonPoints: 4 # For image adding. Duplicate. Already covered by pnpSolver.minNbInliers
+    triangulationReprojHuberRelative: 0.005
+    # Skip location updating in IncreModel::updatePointWithLastOb() when a point has more than nbStableObs observations.
+    nbStableObs: 8
+    zMin: 0.1 # relative to the translation length of the first pair in this model
+    zMax: 1000
+    cosMinAngle: 0.9999619230641713 # std::cos(0.5f/180*M_PI)
+    intervalLocalBA: 4
+    ratioGlobalBA: 1.1 # perform global BA when number of fused images are increased by this ratio.
+    useScheduler: false
+    autoScale: false
+    goodPairConstructionThreshold: 0.8 # ratio of points constructed in the model for inliers of a pair. for re-triangulation. Colmap uses 0.2 but the base is all matches.
+    merge:
+      minNbCommonPoints: 500 # for model merge
+      nbLinksForForcedMerge: 16 # If we have many link pairs, we ignore the minNbCommonPoints requirement.
+      forcedMergeMinNbCommonPoints: 20
+      ransacConfidence: 0.999
+      ransacThreshold: 0.05 # relative to point depth to camera
+      maxNbRansacTests: 5000
+      minInlierRatio: 0.5
+  bundle:
+    useGrpModel: true
+    huberLocal: 3
+    huberGlobal: 3
+    tiePtWeight: 1.0
+    useGlobalIfNoLargerThan: 0
+    optimizeIntrinsics: true
+    minNbCapturesForIntrinsicsOptimization: 64 # Final global BA ignores this
+    ctrlPtObOmega: 16

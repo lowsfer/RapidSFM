@@ -1,0 +1,5 @@
+1. High-cost routines are:
+    b. PropagationMatchFiler::processCell
+    c. rbow::DataBase::query - use a smaller set of kpoints for this. The subset may be created with adaptive NMS.
+2. For image pair refine, try use all PMF matches and Cauthy robust function
+3. sometimes it deadlock and stucks in the last stage
