@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.5)
 
 project(rapidsfm2 LANGUAGES CXX CUDA)
 # cuda 11.3/11.5 causes register spill. 11.4 is ok only with sm-75
@@ -14,6 +14,15 @@ add_subdirectory(extern/RapidBA)
 add_subdirectory(extern/lambdatwist)
 
 find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(GeographicLib)
+if (NOT GeographicLib_FOUND) # version 1.x does not provide cmake config and use a different lib name
+    set(GeographicLib_LIBRARIES Geographic)
+endif()
+
+find_package(exiv2 REQUIRED)
+if (exiv2_VERSION VERSION_GREATER_EQUAL 0.28)
+    add_definitions(-DEXIV2_HAS_TO_INT64=1)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -95,7 +104,7 @@ add_library(RapidSFM
     ${LEGACY_SFM_SRC}
 )
 
-target_link_libraries(RapidSFM PRIVATE bruteForceMatchIMMA cudart RapidBA RapidSIFT RapidBoW cuda-utils cudart nvToolsExt boost_fiber boost_context pthread opencv_highgui opencv_imgproc opencv_imgcodecs opencv_core opencv_features2d yaml-cpp boost_filesystem exiv2 jpeg turbojpeg heif Eigen3::Eigen lambdatwist)
+target_link_libraries(RapidSFM PRIVATE bruteForceMatchIMMA cudart RapidBA RapidSIFT RapidBoW cuda-utils cudart nvToolsExt boost_fiber boost_context pthread opencv_highgui opencv_imgproc opencv_imgcodecs opencv_core opencv_features2d yaml-cpp boost_filesystem exiv2lib jpeg turbojpeg heif Eigen3::Eigen lambdatwist)
 
 if (RAPIDSFM_ENABLE_SOSNET)
     link_directories(
@@ -105,13 +114,13 @@ else()
 endif()
 
 add_executable(rsfm rsfm/rsfm.cpp exifUtils.h)
-target_link_libraries(rsfm PRIVATE RapidSFM Geographic boost_program_options)
+target_link_libraries(rsfm PRIVATE RapidSFM ${GeographicLib_LIBRARIES} boost_program_options)
 
 add_executable(worker rsfm/worker.cpp)
-target_link_libraries(worker PRIVATE RapidSFM Geographic boost_program_options)
+target_link_libraries(worker PRIVATE RapidSFM ${GeographicLib_LIBRARIES} boost_program_options)
 
 add_executable(fiberTest fiberTest.cpp)
-target_link_libraries(fiberTest PRIVATE cuda-utils boost_fiber boost_context pthread cudart exiv2 jpeg turbojpeg heif)
+target_link_libraries(fiberTest PRIVATE cuda-utils boost_fiber boost_context pthread cudart exiv2lib jpeg turbojpeg heif)
 
 add_executable(tests_rapidsfm
 	test/geometryTest.cpp
@@ -121,6 +130,6 @@ add_executable(tests_rapidsfm
 	test/casHashFindBestMatchTest.cpp
 	test/casHashAccumulateDescTest.cpp
 )
-target_link_libraries(tests_rapidsfm PRIVATE RapidSFM gtest gtest_main cuda-utils bruteForceMatchIMMA exiv2 jpeg turbojpeg heif)
+target_link_libraries(tests_rapidsfm PRIVATE RapidSFM gtest gtest_main cuda-utils bruteForceMatchIMMA exiv2lib jpeg turbojpeg heif)
 
 add_executable(converter converter.cpp rsm.hpp rsm.h Types.cpp distortion.cpp)

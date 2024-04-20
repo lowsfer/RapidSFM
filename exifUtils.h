@@ -47,7 +47,7 @@ inline ExifInfo getExifInfo(const fs::path& file) {
         ::atexit(Exiv2::XmpParser::terminate);
     });
 
-    const Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(file.string());
+    auto const image = Exiv2::ImageFactory::open(file.string());
     ASSERT(image.get() != 0);
     image->readMetadata();
     result.width = image->pixelWidth();
@@ -71,7 +71,11 @@ inline ExifInfo getExifInfo(const fs::path& file) {
             if (iterRef == exifData.end() || iterVal == exifData.end()) {
                 return {};
             }
+#if EXIV2_HAS_TO_INT64
+            const auto ref = iterRef->toInt64();
+#else
             const auto ref = iterRef->toLong();
+#endif
             ASSERT((ref == positiveRef || ref == negativeRef) && iterVal->count() == 3);
             const int sign = (ref == positiveRef ? 1 : -1);
             const double degree = iterVal->toFloat(0);
@@ -94,7 +98,11 @@ inline ExifInfo getExifInfo(const fs::path& file) {
             if (iterRef == exifData.end() || iterVal == exifData.end()) {
                 return result;
             }
+#if EXIV2_HAS_TO_INT64
+            const auto ref = iterRef->toInt64();
+#else
             const auto ref = iterRef->toLong();
+#endif
             ASSERT((ref == 0 || ref == 1));
             result = iterVal->toFloat() * (ref == 0 ? 1 : -1);
             return result;
